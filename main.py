@@ -6,13 +6,13 @@ import codecs
 print("Bib Label Generator")
 filePathRead = input("Input un-labeled Bib file name:")
 filePathWrite = input("Input the file name for labeled Bib file: ")
-#filePathRead = 'ppg.txt'
-#filePathWrite = 'ppgl.txt'
+#filePathRead = 'ppg.bib'
+#filePathWrite = 'ref.bib'
 fileRead = codecs.open(filePathRead, 'r', encoding='utf-8')
 #fileRead = open(filePathRead, 'r')
 fileWrite = open(filePathWrite, 'w', encoding='utf-8')
 
-entryHeader = '@.*{\r+\n+$'
+entryHeader = '(@.*{).*\r+\n+$'
 entryContent = '.*\s*=\s*{.*}.*\r+\n+$'
 entryEnd = '.*}\r+\n+$'
 
@@ -31,7 +31,7 @@ while done == False:
     rl = rl.replace(u'\ufeff','')
     if re.match(entryHeader, rl):
         contentFlag = 'entryBegin'
-        whead = rl
+        whead = re.match(entryHeader, rl).group(1)
         wbody = ''
     elif re.match(entryContent, rl):
         contentFlag = 'entryContent'
@@ -56,9 +56,23 @@ while done == False:
 
     elif re.match(entryEnd, rl):
         contentFlag = 'entryEnd'
-        label = author + year + re.split('\s', title)[0] 
+        #Get all the words in the title
+        titleWordList = re.split('\s+', title)
+        #Exclude the words like The, the, A, a
+        for titleWord in titleWordList:
+            if not re.match('^([T|t]he|A|a)$', titleWord):
+                titleLabel = titleWord
+                break
+        #If there is no meaningful word found, use the first available word in the title
+        if not titleWord:
+            titleLabel = titleWordList[0]
+        #Generate the label
+        label = author + year + titleLabel 
+        #Generate the body part
         wbody = wbody + rl
-        fileWrite.write(whead.replace('\r\n','') + label + '\r\n' + wbody + '\r\n')
+        toWrite = whead.replace('\r\n','') + label + '\r\n' + wbody + '\r\n'
+        toWrite = toWrite.replace('\r\n', '\n')
+        fileWrite.write(toWrite)
     else:
         contentFlag = 'illegal' 
 
