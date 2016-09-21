@@ -93,4 +93,4 @@ ENV/
 .vscode/
 
 #TestData
-.bib
+*.bib
